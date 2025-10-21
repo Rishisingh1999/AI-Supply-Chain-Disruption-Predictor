@@ -1,0 +1,8 @@
+Metric,Value
+Model Type,Gradient Boosting
+R² Score,0.9939149072351271
+MAE,0.6206802936023623
+RMSE,0.7856995937254428
+Training Samples,1440
+Test Samples,360
+Features Used,12
