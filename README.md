@@ -1,282 +1,152 @@
-# 🔮 AI-Powered Supply Chain Disruption Predictor
+# AI Supply Chain Disruption Predictor
 
-![Python](https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white) ![Jupyter](https://img.shields.io/badge/Jupyter-F37626?style=for-the-badge&logo=jupyter&logoColor=white) ![Scikit Learn](https://img.shields.io/badge/Scikit_Learn-F7931E?style=for-the-badge&logo=scikit-learn&logoColor=white) ![Pandas](https://img.shields.io/badge/Pandas-150458?style=for-the-badge&logo=pandas&logoColor=white) ![NumPy](https://img.shields.io/badge/NumPy-013243?style=for-the-badge&logo=numpy&logoColor=white)
+![Python](https://img.shields.io/badge/Python-3.10+-3776AB?logo=python&logoColor=white)
+![scikit-learn](https://img.shields.io/badge/scikit--learn-1.3+-F7931E?logo=scikit-learn&logoColor=white)
 
-*A futuristic machine learning project that forecasts supply chain disruptions and evaluates supplier ethical compliance. Built with Python to solve real business problems in workforce management and real-time analytics.*
+Binary classification prototype that predicts whether a shipment will experience a disruption, using the public Kaggle dataset *Global Supply Chain Risk and Logistics 2024-2026*.
 
----
-
-## ✨ Project Overview
-
-This predictive analytics project, developed as part of a **personal portfolio initiative** in **October 2025**, demonstrates end-to-end machine learning capabilities for supply chain risk management. The project showcases expertise in:
-
-- 🤖 **Machine Learning** - Predictive modeling with scikit-learn
-- 📊 **Feature Engineering** - Creating meaningful business metrics
-- 🔍 **Risk Assessment** - Evaluating supplier ethical compliance
-- 📈 **Data Analysis** - Exploratory data analysis and insights
-- 🎯 **Business Intelligence** - Translating predictions into actions
-
-### 🎯 Key Objectives
-
-- 🔮 **Predict disruption risks** based on historical patterns
-- ⚖️ **Evaluate supplier ethics** for labor practices and sustainability
-- 📊 **Generate risk scores** for proactive decision making
-- 🌍 **Analyze geopolitical factors** affecting supply chains
-- 💼 **Provide actionable insights** for procurement teams
-
-### 💡 Why I Built This Project
-
-As a Business Analyst with a focus on real-time analytics and workforce management, I noticed how supply chain disruptions are costing companies billions—up to $228 million per year on average due to geopolitical tensions, climate events, and ethical issues. I wanted to create a tool that not only predicts risks but also ensures suppliers meet modern ethical standards like labor practices and sustainability.
-
-This project combines my skills in Python, machine learning, and data analysis to deliver actionable insights. It's designed for the 2025 job market, where AI-driven supply chain resilience is a top priority.
+> This is an educational portfolio project. Results are derived solely from the public dataset; they do not constitute operational recommendations or claims of cost savings.
 
 ---
 
-## 🚀 What Does It Do?
+## 1. Project Purpose
 
-I developed a predictive system that analyzes supplier data to generate two key scores:
+Supply-chain disruptions are expensive. This project builds a transparent baseline that:
 
-### 📉 Disruption Risk Score (0-100)
-Predicts the likelihood of supply chain disruptions based on:
-- Historical disruption patterns
-- Geopolitical stability in supplier regions
-- Lead time variations and reliability metrics
-- Order quantity and dependency factors
-
-### ⚖️ Ethics Compliance Score (0-100)
-Evaluates supplier adherence to ethical standards:
-- Labor practices and working conditions
-- Environmental sustainability
-- Corporate social responsibility
-- Regulatory compliance
+- Predicts the binary outcome `Disruption_Occurred`.
+- Uses only features that would realistically be known before or at the time of shipment planning.
+- Compares a simple logistic regression against tree-based models and reports honest held-out metrics.
 
 ---
 
-## 🛠️ Technical Stack
+## 2. Dataset Source & Attribution
 
-### 💻 Core Technologies
+| Item | Value |
+|------|-------|
+| **Source** | [Kaggle – Global Supply Chain Risk and Logistics 2024-2026](https://www.kaggle.com/datasets/nudratabbas/global-supply-chain-risk-and-logistics-2024-2026) |
+| **File used** | `global_supply_chain_risk_2026.csv` |
+| **Rows / Columns** | 5,000 × 14 |
+| **Target prevalence** | 61.26 % positive (`Disruption_Occurred = 1`) |
+| **SHA-256** | `93ac93e4c53deea4c6dc7ca937326a2f1f839543c4ce0fa5fcbc300da8a03c73` |
+| **Access date** | 2026-10-27 |
 
-- **Language:** Python 3.8+
-- **Environment:** Jupyter Notebook
-- **ML Framework:** Scikit-learn
-- **Data Analysis:** Pandas, NumPy
-- **Visualization:** Matplotlib, Seaborn
+**Target definition**  
+`Disruption_Occurred` is already a binary label (1 = disruption occurred). No re-labeling was performed.
 
-### 📚 Key Libraries
-
-| Library | Purpose |
-|---------|----------|
-| **Pandas** | Data manipulation and analysis |
-| **NumPy** | Numerical computations |
-| **Scikit-learn** | Machine learning algorithms |
-| **Matplotlib** | Data visualization |
-| **Seaborn** | Statistical graphics |
-
-### 🧪 Machine Learning Techniques
-
-- ✅ **Supervised Learning** - Classification and regression
-- ✅ **Feature Engineering** - Domain-specific metrics
-- ✅ **Model Evaluation** - Cross-validation and metrics
-- ✅ **Risk Scoring** - Custom scoring algorithms
-- ✅ **Data Preprocessing** - Cleaning and transformation
+**Feature availability note**  
+All numeric and categorical features used (distance, weight, fuel-price index, geopolitical risk score, carrier reliability, lead time, transport mode, product category, weather, origin/destination ports) are treated as known at planning time. Identifiers (`Shipment_ID`) and the raw date string are excluded from the model.
 
 ---
 
-## 📦 Installation
+## 3. Data Cleaning & Feature Engineering
 
-### Local Setup
+- No missing values in the selected columns.
+- Numeric features are standardized.
+- Categorical features are one-hot encoded (`handle_unknown="ignore"`).
+- No target-derived or post-disruption fields are present in the feature set.
+
+---
+
+## 4. Model & Validation Methodology
+
+- **Split**: Stratified 80/20 train+val / test, then another stratified 80/20 inside the train+val portion for model selection.
+- **Candidates evaluated on validation AUC**:
+  - Logistic Regression (class_weight="balanced")
+  - Random Forest
+  - Gradient Boosting
+- **Selected model**: Logistic Regression (highest validation AUC).
+- Final model is refit on the full train+val set and evaluated once on the held-out test set.
+- Metrics: ROC-AUC, Average Precision, Precision, Recall, F1, Confusion Matrix.
+
+---
+
+## 5. Actual Test-Set Results (run 2026-10-27)
+
+| Metric | Value |
+|--------|-------|
+| ROC-AUC | **0.828** |
+| Average Precision | **0.902** |
+| Precision | 0.859 |
+| Recall | 0.674 |
+| F1 | 0.755 |
+
+**Confusion matrix (thr = 0.5)**
+
+```
+[[319  68]
+ [200 413]]
+```
+
+Validation-set comparison (used only for model selection):
+
+| Model | Val AUC | Val AP |
+|-------|---------|--------|
+| LogisticRegression | 0.827 | 0.899 |
+| RandomForest | 0.819 | 0.893 |
+| GradientBoosting | 0.814 | 0.892 |
+
+All figures are produced by a fresh execution of `run_experiment.py`. Machine-readable report: `outputs/metrics.json`.
+
+---
+
+## 6. Generated Artifacts
+
+```
+outputs/
+├── metrics.json
+├── test_predictions.csv
+├── eda_target.png
+├── roc_curve.png
+├── pr_curve.png
+└── confusion_matrix.png
+```
+
+---
+
+## 7. Setup & Reproduction
 
 ```bash
-# Clone the repository
+# 1. Clone
 git clone https://github.com/Rishisingh1999/AI-Supply-Chain-Disruption-Predictor.git
 cd AI-Supply-Chain-Disruption-Predictor
 
-# Install dependencies
-pip install pandas numpy scikit-learn matplotlib seaborn jupyter
+# 2. Install
+pip install -r requirements.txt
 
-# Launch Jupyter Notebook
-jupyter notebook
+# 3. Download the dataset
+kaggle datasets download -d nudratabbas/global-supply-chain-risk-and-logistics-2024-2026 -p data --unzip
+# Place global_supply_chain_risk_2026.csv in the project root or data/
+
+# 4. Run
+python run_experiment.py
 ```
 
-### Google Colab Setup
+---
 
-1. Open [Google Colab](https://colab.research.google.com/)
-2. Upload the notebook file
-3. Run all cells
-4. Dependencies are pre-installed in Colab
+## 8. Limitations & Known Risks
+
+- The dataset is relatively small (5 k rows) and the positive class is majority; performance should be interpreted with caution.
+- Feature-to-target relationships may contain synthetic or simplified patterns; real-world logistics data is noisier.
+- No time-series / sequential validation was performed (dates exist but the current split is stratified random).
+- Geopolitical and weather features are provided as static scores; their real-time availability and measurement methodology are unknown.
+- Results must not be interpreted as causal claims or as guarantees of cost reduction.
 
 ---
 
-## 🎮 Usage
-
-### Running the Analysis
-
-```python
-# Load the notebook
-# Execute cells sequentially
-# Review predictions and visualizations
-```
-
-The notebook will:
-
-1. Load and preprocess supplier data
-2. Perform exploratory data analysis
-3. Engineer features for ML models
-4. Train predictive models
-5. Generate risk scores
-6. Visualize results and insights
-
----
-
-## 📊 Sample Outputs
-
-### 🔮 Predictions Generated
-
-**High-Risk Suppliers Identified:**
-- Supplier A: 87% disruption risk, 45% ethics score
-- Supplier B: 72% disruption risk, 60% ethics score
-- Supplier C: 55% disruption risk, 35% ethics score
-
-### 📈 Key Insights
-
-- **Geopolitical Risk:** 40% of high-risk suppliers in unstable regions
-- **Lead Time Variance:** Suppliers with >20% variance show 3x disruption risk
-- **Ethics Correlation:** Low ethics scores correlate with higher disruption rates
-- **Seasonal Patterns:** Q4 shows 25% increase in disruption likelihood
-
-### 📊 Visualizations
-
-The project generates:
-
-- 📉 **Risk Distribution** - Histogram of disruption scores
-- 🗺️ **Geopolitical Heatmap** - Regional risk analysis
-- 📊 **Correlation Matrix** - Feature relationships
-- 🎯 **Supplier Ranking** - Prioritized intervention list
-
----
-
-## 💼 Business Applications
-
-### 🎯 Use Cases
-
-- **Procurement Teams:** Prioritize supplier diversification
-- **Risk Managers:** Proactive disruption mitigation
-- **Supply Chain Officers:** Strategic sourcing decisions
-- **Sustainability Teams:** Ethical supplier selection
-- **C-Suite Executives:** Supply chain resilience dashboards
-
-### 📈 Value Proposition
-
-This solution enables organizations to:
-
-- ✅ **Reduce disruption costs** by 30-40% through early intervention
-- ✅ **Improve supplier quality** through data-driven selection
-- ✅ **Enhance brand reputation** with ethical sourcing
-- ✅ **Comply with regulations** on supply chain transparency
-- ✅ **Optimize inventory** based on risk-adjusted planning
-
----
-
-## 📁 Project Structure
+## 9. Project Structure
 
 ```
 AI-Supply-Chain-Disruption-Predictor/
-├── supply_chain_predictor.ipynb    # Main analysis notebook
-├── data/                           # Dataset files
-│   ├── suppliers.csv
-│   └── disruptions.csv
-├── models/                         # Trained ML models
-├── outputs/                        # Generated reports
-└── README.md                       # Project documentation
+├── run_experiment.py
+├── requirements.txt
+├── README.md
+├── .gitignore
+├── data/                 # place CSV here (git-ignored)
+└── outputs/              # generated metrics & plots
 ```
 
 ---
 
-## 🔑 Key Features
+## License & Attribution
 
-### 🤖 Machine Learning Models
-
-- **Random Forest Classifier** - Disruption prediction
-- **Logistic Regression** - Ethics classification
-- **Ensemble Methods** - Combined risk scoring
-- **Feature Importance Analysis** - Driver identification
-
-### 📊 Analytics Capabilities
-
-- Historical disruption pattern analysis
-- Supplier performance benchmarking
-- Geopolitical risk mapping
-- Ethics compliance tracking
-- Predictive maintenance for supply chains
-
-### 🎨 Visualizations
-
-- Interactive dashboards with Plotly (optional)
-- Risk heatmaps by geography
-- Supplier scorecards
-- Trend analysis over time
-
----
-
-## 🎓 Skills Highlighted
-
-This project demonstrates proficiency in:
-
-- **Machine Learning:** End-to-end ML pipeline development
-- **Python Programming:** Advanced data manipulation
-- **Data Analysis:** EDA and statistical inference
-- **Business Intelligence:** KPI development and reporting
-- **Domain Knowledge:** Supply chain risk management
-- **Communication:** Clear documentation and insights
-
----
-
-## 🔮 Future Enhancements
-
-- 🌐 **Real-time Data Integration** - Live supplier monitoring
-- 📱 **Web Dashboard** - Interactive Streamlit application
-- 🤖 **Deep Learning** - Neural networks for complex patterns
-- 🔗 **API Development** - RESTful API for integration
-- ☁️ **Cloud Deployment** - AWS/Azure hosting
-- 📧 **Alert System** - Automated risk notifications
-
----
-
-## 📈 Business Impact
-
-Supply chain disruptions cost companies an average of **$228 million annually**. This predictive tool helps:
-
-- 🎯 Identify high-risk suppliers **before** disruptions occur
-- ⚖️ Ensure ethical sourcing for **brand protection**
-- 💰 Reduce costs through **proactive mitigation**
-- 📊 Enable data-driven **procurement decisions**
-- 🌍 Support **sustainability goals**
-
----
-
-## 📧 Contact
-
-**Hrushikesh Singh**
-
-- 📧 Email: hrushisingh697@gmail.com
-- 💼 LinkedIn: [linkedin.com/in/hrushikesh-singh](https://www.linkedin.com/in/hrushikesh-singh-564b4035a)
-- 🐙 GitHub: [@Rishisingh1999](https://github.com/Rishisingh1999)
-- 🌐 Portfolio: [rishisingh1999.github.io/my-portfolio-website](https://rishisingh1999.github.io/my-portfolio-website/)
-
----
-
-## 📄 License
-
-This project is open source and available for educational purposes.
-
-**Attribution appreciated** 🙏
-
----
-
-## ⭐ Show Your Support
-
-If you found this project useful, please give it a ⭐ on GitHub!
-
-**Built with ❤️ for Supply Chain Analytics & ML Engineering**
-
----
+Educational use. Please attribute the original Kaggle dataset author.
