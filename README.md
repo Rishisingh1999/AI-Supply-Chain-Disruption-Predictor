@@ -34,7 +34,7 @@ Supply-chain disruptions are expensive. This project builds a transparent baseli
 `Disruption_Occurred` is already a binary label (1 = disruption occurred). No re-labeling was performed.
 
 **Feature availability note**  
-All numeric and categorical features used (distance, weight, fuel-price index, geopolitical risk score, carrier reliability, lead time, transport mode, product category, weather, origin/destination ports) are treated as known at planning time. Identifiers (`Shipment_ID`) and the raw date string are excluded from the model.
+All numeric and categorical features used (distance, weight, fuel-price index, geopolitical risk score, carrier reliability, lead time, transport mode, product category, weather, origin/destination ports) are treated as known at planning time. Identifiers (`Shipment_ID`) and the raw date string are excluded from the model. The exact measurement timing of the risk scores and weather labels is not fully documented by the dataset publisher; residual uncertainty remains.
 
 ---
 
@@ -49,7 +49,7 @@ All numeric and categorical features used (distance, weight, fuel-price index, g
 
 ## 4. Model & Validation Methodology
 
-- **Split**: Stratified 80/20 train+val / test, then another stratified 80/20 inside the train+val portion for model selection.
+- **Split**: Stratified 80/20 train+val / test, then another stratified 80/20 inside the train+val portion for model selection. (Note: this is a random stratified split, not a temporal split.)
 - **Candidates evaluated on validation AUC**:
   - Logistic Regression (class_weight="balanced")
   - Random Forest
@@ -85,11 +85,13 @@ Validation-set comparison (used only for model selection):
 | RandomForest | 0.819 | 0.893 |
 | GradientBoosting | 0.814 | 0.892 |
 
-All figures are produced by a fresh execution of `run_experiment.py`. Machine-readable report: `outputs/metrics.json`.
+All figures are produced by a fresh execution of `run_experiment.py`. After running the script, the machine-readable report appears in `outputs/metrics.json`.
 
 ---
 
 ## 6. Generated Artifacts
+
+Running `python run_experiment.py` creates an `outputs/` directory (not committed to Git) containing:
 
 ```
 outputs/
@@ -142,7 +144,7 @@ AI-Supply-Chain-Disruption-Predictor/
 ├── README.md
 ├── .gitignore
 ├── data/                 # place CSV here (git-ignored)
-└── outputs/              # generated metrics & plots
+└── outputs/              # generated locally by the experiment (not committed)
 ```
 
 ---
