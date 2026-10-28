@@ -1,0 +1,18 @@
+# Data
+data/
+global_supply_chain_risk_2026.csv
+*.csv.gz
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.env
+
+# Jupyter
+.ipynb_checkpoints/
+
+# OS
+.DS_Store
+Thumbs.db
