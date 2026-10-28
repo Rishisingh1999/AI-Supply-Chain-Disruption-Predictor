@@ -33,6 +33,13 @@ Supply-chain disruptions are expensive. This project builds a transparent baseli
 **Target definition**  
 `Disruption_Occurred` is already a binary label (1 = disruption occurred). No re-labeling was performed.
 
+**Data location**  
+The script looks for `global_supply_chain_risk_2026.csv` in this order:
+1. Repository root (`./global_supply_chain_risk_2026.csv`)
+2. `data/` directory (`./data/global_supply_chain_risk_2026.csv`)
+
+If neither is found, it exits with download instructions.
+
 **Feature availability note**  
 All numeric and categorical features used (distance, weight, fuel-price index, geopolitical risk score, carrier reliability, lead time, transport mode, product category, weather, origin/destination ports) are treated as known at planning time. Identifiers (`Shipment_ID`) and the raw date string are excluded from the model. The exact measurement timing of the risk scores and weather labels is not fully documented by the dataset publisher; residual uncertainty remains.
 
@@ -115,12 +122,15 @@ cd AI-Supply-Chain-Disruption-Predictor
 # 2. Install
 pip install -r requirements.txt
 
-# 3. Download the dataset
+# 3. Download the dataset (either location works)
 kaggle datasets download -d nudratabbas/global-supply-chain-risk-and-logistics-2024-2026 -p data --unzip
-# Place global_supply_chain_risk_2026.csv in the project root or data/
+# or place global_supply_chain_risk_2026.csv in the project root
 
 # 4. Run
 python run_experiment.py
+
+# 5. (Optional) Run path-resolution tests
+python -m unittest tests.test_data_path -v
 ```
 
 ---
@@ -143,6 +153,8 @@ AI-Supply-Chain-Disruption-Predictor/
 ├── requirements.txt
 ├── README.md
 ├── .gitignore
+├── tests/
+│   └── test_data_path.py
 ├── data/                 # place CSV here (git-ignored)
 └── outputs/              # generated locally by the experiment (not committed)
 ```

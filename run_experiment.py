@@ -6,6 +6,7 @@ Dataset: Global Supply Chain Risk and Logistics 2024-2026 (Kaggle)
 """
 import json
 import hashlib
+import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -28,7 +29,26 @@ SEED = 42
 np.random.seed(SEED)
 OUT_DIR = Path("outputs")
 OUT_DIR.mkdir(exist_ok=True)
-DATA_PATH = Path("global_supply_chain_risk_2026.csv")
+
+FILENAME = "global_supply_chain_risk_2026.csv"
+CANDIDATE_PATHS = [Path(FILENAME), Path("data") / FILENAME]
+
+DOWNLOAD_HELP = """
+Dataset not found. Expected one of:
+  ./global_supply_chain_risk_2026.csv
+  ./data/global_supply_chain_risk_2026.csv
+
+Download:
+  kaggle datasets download -d nudratabbas/global-supply-chain-risk-and-logistics-2024-2026 -p data --unzip
+  Then ensure the CSV is named global_supply_chain_risk_2026.csv in the project root or data/
+"""
+
+def resolve_data_path(candidates=None):
+    candidates = candidates or CANDIDATE_PATHS
+    for p in candidates:
+        if p.is_file():
+            return p.resolve()
+    raise FileNotFoundError(DOWNLOAD_HELP.strip())
 
 def sha256_file(path: Path) -> str:
     h = hashlib.sha256()
@@ -50,12 +70,13 @@ def eval_at_threshold(y_true, proba, threshold=0.5):
 
 def main():
     print("Loading data...")
-    df = pd.read_csv(DATA_PATH)
-    file_hash = sha256_file(DATA_PATH)
+    data_path = resolve_data_path()
+    print(f"Using dataset: {data_path}")
+    df = pd.read_csv(data_path)
+    file_hash = sha256_file(data_path)
     print(f"Shape: {df.shape}, SHA256: {file_hash}")
     print("Target prevalence:\n", df["Disruption_Occurred"].value_counts(normalize=True))
 
-    # Features available at prediction time (no leakage assumed)
     numeric_features = [
         "Distance_km", "Weight_MT", "Fuel_Price_Index",
         "Geopolitical_Risk_Score", "Carrier_Reliability_Score", "Lead_Time_Days"
@@ -68,7 +89,6 @@ def main():
     X = df[numeric_features + categorical_features]
     y = df["Disruption_Occurred"].values
 
-    # Stratified split
     X_trainval, X_test, y_trainval, y_test = train_test_split(
         X, y, test_size=0.2, stratify=y, random_state=SEED
     )
@@ -105,11 +125,9 @@ def main():
         }
         print(f"{name}: val AUC={val_results[name]['val_auc']:.4f}, AP={val_results[name]['val_ap']:.4f}")
 
-    # Select best by val AUC
     best_name = max(val_results, key=lambda k: val_results[k]["val_auc"])
     print(f"Selected model: {best_name}")
 
-    # Refit on train+val
     final_pipe = Pipeline([
         ("pre", preprocessor),
         ("clf", candidates[best_name])
@@ -121,14 +139,12 @@ def main():
     print("\n=== Test metrics ===")
     print(json.dumps(metrics, indent=2))
 
-    # Save predictions
     pd.DataFrame({
         "y_true": y_test,
         "y_proba": test_proba,
         "y_pred": (test_proba >= 0.5).astype(int)
     }).to_csv(OUT_DIR / "test_predictions.csv", index=False)
 
-    # EDA target
     plt.figure(figsize=(5, 4))
     df["Disruption_Occurred"].value_counts().plot(kind="bar", color=["steelblue", "salmon"])
     plt.title("Target Distribution: Disruption_Occurred")
@@ -138,7 +154,6 @@ def main():
     plt.savefig(OUT_DIR / "eda_target.png", dpi=120)
     plt.close()
 
-    # ROC
     fpr, tpr, _ = roc_curve(y_test, test_proba)
     plt.figure(figsize=(6, 5))
     plt.plot(fpr, tpr, label=f"AUC = {metrics['roc_auc']:.3f}")
@@ -151,7 +166,6 @@ def main():
     plt.savefig(OUT_DIR / "roc_curve.png", dpi=120)
     plt.close()
 
-    # PR
     prec, rec, _ = precision_recall_curve(y_test, test_proba)
     plt.figure(figsize=(6, 5))
     plt.plot(rec, prec, label=f"AP = {metrics['average_precision']:.3f}")
@@ -163,7 +177,6 @@ def main():
     plt.savefig(OUT_DIR / "pr_curve.png", dpi=120)
     plt.close()
 
-    # Confusion
     cm = np.array(metrics["confusion_matrix"])
     plt.figure(figsize=(5, 4))
     sns.heatmap(cm, annot=True, fmt="d", cmap="Blues",
@@ -176,7 +189,8 @@ def main():
     report = {
         "target_definition": "Disruption_Occurred (binary 1 = disruption occurred)",
         "dataset_source": "https://www.kaggle.com/datasets/nudratabbas/global-supply-chain-risk-and-logistics-2024-2026",
-        "dataset_file": "global_supply_chain_risk_2026.csv",
+        "dataset_file": FILENAME,
+        "dataset_path": str(data_path),
         "dataset_rows": int(df.shape[0]),
         "dataset_cols": int(df.shape[1]),
         "target_prevalence": float(y.mean()),
@@ -198,4 +212,8 @@ def main():
     print("\nSaved all artifacts to", OUT_DIR)
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except FileNotFoundError as e:
+        print(str(e), file=sys.stderr)
+        sys.exit(1)
